@@ -6,11 +6,55 @@
 
 * {
   font-family: 'Outfit', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile App Styling */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
 }
 
 /* Scrollbar hidden */
 ::-webkit-scrollbar {
   display: none;
+}
+
+/* Mobile-first responsive */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+  
+  /* Prevent text selection on mobile for app-like feel */
+  * {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Allow text selection in inputs */
+  input, textarea {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+  
+  /* Safe area for bottom navigation */
+  main {
+    padding-bottom: 64px;
+  }
 }
 
 @layer utilities {

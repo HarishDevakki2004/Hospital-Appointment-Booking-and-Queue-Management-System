@@ -4,7 +4,7 @@ import { DoctorContext } from '../context/DoctorContext'
 import { AdminContext } from '../context/AdminContext'
 import { assets } from '../assets/assets'
 import { NavLink, useLocation } from 'react-router-dom'
-import { FiHome, FiCalendar, FiUserPlus, FiUsers, FiUser, FiMenu, FiChevronRight } from 'react-icons/fi'
+import { FiHome, FiCalendar, FiUserPlus, FiUsers, FiUser, FiMenu, FiChevronRight, FiList } from 'react-icons/fi'
 
 const Sidebar = () => {
     const { dToken } = useContext(DoctorContext)
@@ -23,6 +23,8 @@ const Sidebar = () => {
     const doctorLinks = [
         { path: '/doctor-dashboard', icon: <FiHome />, label: 'Dashboard' },
         { path: '/doctor-appointments', icon: <FiCalendar />, label: 'Appointments' },
+        { path: '/availability-management', icon: <FiCalendar />, label: 'Availability' },
+        { path: '/queue-management', icon: <FiList />, label: 'Queue Management' },
         { path: '/doctor-profile', icon: <FiUser />, label: 'Profile' }
     ]
 
@@ -84,7 +86,7 @@ const Sidebar = () => {
             >
                 <img 
                     src={assets.admin_logo} 
-                    alt="Doc+ Logo" 
+                    alt="MediQ Logo" 
                     className={`h-8 transition-all ${isCollapsed ? 'w-8' : 'w-32'}`}
                 />
             </motion.div>

@@ -44,7 +44,7 @@ const Navbar = () => {
             <img
               className="h-8 w-auto"
               src={assets.admin_logo}
-              alt="Doc+ Logo"
+              alt="MediQ Logo"
             />
             <motion.span
               initial={{ opacity: 0, x: -10 }}

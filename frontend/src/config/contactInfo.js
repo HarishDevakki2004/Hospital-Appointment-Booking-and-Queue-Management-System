@@ -23,8 +23,8 @@ export const contactInfo = {
   
   // Company Information
   company: {
-    name: "Doc+",
-    description: "Doc+ revolutionizes healthcare access with seamless appointment booking, real-time updates, and secure telemedicine solutions—connecting patients with top specialists effortlessly."
+    name: "MediQ",
+    description: "MediQ revolutionizes healthcare access with seamless appointment booking, real-time updates, and secure telemedicine solutions—connecting patients with top specialists effortlessly."
   }
 }
 

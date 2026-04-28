@@ -9,11 +9,14 @@ import { Route, Routes } from 'react-router-dom';
 import Dashboard from './pages/Admin/Dashboard';
 import AllAppointments from './pages/Admin/AllAppointments';
 import AddDoctor from './pages/Admin/AddDoctor';
+import EditDoctor from './pages/Admin/EditDoctor';
 import DoctorList from './pages/Admin/DoctorList';
 import { DoctorContext } from './context/DoctorContext';
 import DoctorDashboard from './pages/Doctor/DoctorDashboard';
 import DoctorAppointments from './pages/Doctor/DoctorAppointments';
 import DoctorProfile from './pages/Doctor/DoctorProfile';
+import SlotQueueManagement from './pages/Doctor/SlotQueueManagement';
+import AvailabilityManagement from './pages/Doctor/AvailabilityManagement';
 
 const App = () => {
 
@@ -32,11 +35,14 @@ const App = () => {
           <Route path='/admin-dashboard' element={<Dashboard />} />
           <Route path='/all-appointments' element={<AllAppointments />} />
           <Route path='/add-doctor' element={<AddDoctor />} />
+          <Route path='/edit-doctor' element={<EditDoctor />} />
           <Route path='/doctor-list' element={<DoctorList />} />
 
           {/* Doctor Route */}
           <Route path='/doctor-dashboard' element={<DoctorDashboard />} />
           <Route path='/doctor-appointments' element={<DoctorAppointments />} />
+          <Route path='/queue-management' element={<SlotQueueManagement />} />
+          <Route path='/availability-management' element={<AvailabilityManagement />} />
           <Route path='/doctor-profile' element={<DoctorProfile />} />
         </Routes>
       </div>

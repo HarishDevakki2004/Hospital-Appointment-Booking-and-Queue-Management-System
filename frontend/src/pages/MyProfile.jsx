@@ -13,16 +13,19 @@ import {
   FiMapPin,
   FiCalendar,
   FiChevronDown,
+  FiLogOut,
 } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 
 const MyProfile = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [image, setImage] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { token, backendUrl, userData, setUserData, loadUserProfileData } =
+  const { token, backendUrl, userData, setUserData, loadUserProfileData, handleLogout } =
     useContext(AppContext);
   const fileInputRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Update user profile data
   const updateUserProfileData = async () => {
@@ -73,7 +76,7 @@ const MyProfile = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8"
+      className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8 pb-20 md:pb-12"
     >
       <div className="max-w-md mx-auto">
         {/* Profile Card */}
@@ -354,69 +357,87 @@ const MyProfile = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="flex justify-center gap-4"
+              className="space-y-3"
             >
-              {isEdit ? (
-                <>
+              <div className="flex justify-center gap-4">
+                {isEdit ? (
+                  <>
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => {
+                        setIsEdit(false);
+                        setImage(false);
+                      }}
+                      className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-medium"
+                    >
+                      Cancel
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={updateUserProfileData}
+                      disabled={isLoading}
+                      className="px-6 py-2 bg-primary text-white rounded-lg font-medium flex items-center gap-2"
+                    >
+                      {isLoading ? (
+                        <>
+                          <svg
+                            className="animate-spin h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <FiSave />
+                          Save
+                        </>
+                      )}
+                    </motion.button>
+                  </>
+                ) : (
                   <motion.button
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
-                    onClick={() => {
-                      setIsEdit(false);
-                      setImage(false);
-                    }}
-                    className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-medium"
-                  >
-                    Cancel
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={updateUserProfileData}
-                    disabled={isLoading}
+                    onClick={() => setIsEdit(true)}
                     className="px-6 py-2 bg-primary text-white rounded-lg font-medium flex items-center gap-2"
                   >
-                    {isLoading ? (
-                      <>
-                        <svg
-                          className="animate-spin h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <FiSave />
-                        Save
-                      </>
-                    )}
+                    <FiEdit />
+                    Edit Profile
                   </motion.button>
-                </>
-              ) : (
+                )}
+              </div>
+              
+              {/* Logout Button */}
+              {!isEdit && (
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => setIsEdit(true)}
-                  className="px-6 py-2 bg-primary text-white rounded-lg font-medium flex items-center gap-2"
+                  onClick={() => {
+                    handleLogout();
+                    navigate('/login');
+                  }}
+                  className="w-full px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
                 >
-                  <FiEdit />
-                  Edit Profile
+                  <FiLogOut />
+                  Logout
                 </motion.button>
               )}
             </motion.div>

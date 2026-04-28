@@ -53,7 +53,7 @@ const About = () => {
       ref={ref}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen w-full bg-gradient-to-br from-[#001f2b] to-[#003d4d] text-white overflow-hidden"
+      className="min-h-screen w-full bg-gradient-to-br from-[#001f2b] to-[#003d4d] text-white overflow-hidden pb-20 md:pb-0"
     >
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden opacity-10">
@@ -114,7 +114,7 @@ const About = () => {
           >
             <motion.img
               src={assets.about_image}
-              alt="About Doc+"
+              alt="About MediQ"
               className="rounded-2xl shadow-2xl w-full max-w-lg mx-auto border-4 border-white/10"
               whileHover={{ scale: 1.02 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
@@ -130,14 +130,14 @@ const About = () => {
               className="text-lg leading-relaxed"
               whileInView={{ opacity: 1 }}
             >
-              Welcome to <span className="text-cyan-300 font-medium">Doc+</span>, your trusted partner in managing your healthcare needs conveniently and efficiently. At Doc+, we understand the challenges individuals face when it comes to scheduling doctor appointments and managing their health records.
+              Welcome to <span className="text-cyan-300 font-medium">MediQ</span>, your trusted partner in managing your healthcare needs conveniently and efficiently. At MediQ, we understand the challenges individuals face when it comes to scheduling doctor appointments and managing their health records.
             </motion.p>
             
             <motion.p 
               className="text-lg leading-relaxed"
               whileInView={{ opacity: 1 }}
             >
-              Doc+ is committed to excellence in healthcare technology. We continuously strive to enhance our platform, integrating the latest advancements to improve user experience and deliver superior service. Whether you're booking your first appointment or managing ongoing care, Doc+ is here to support you every step of the way.
+              MediQ is committed to excellence in healthcare technology. We continuously strive to enhance our platform, integrating the latest advancements to improve user experience and deliver superior service. Whether you're booking your first appointment or managing ongoing care, MediQ is here to support you every step of the way.
             </motion.p>
 
             <motion.div
@@ -148,7 +148,7 @@ const About = () => {
             >
               <h3 className="text-cyan-300 text-xl font-semibold mb-3">Our Vision</h3>
               <p className="text-lg">
-                Our vision at Doc+ is to create a seamless healthcare experience for every user. We aim to bridge the gap between patients and healthcare providers, making it easier for you to access the care you need, when you need it.
+                Our vision at MediQ is to create a seamless healthcare experience for every user. We aim to bridge the gap between patients and healthcare providers, making it easier for you to access the care you need, when you need it.
               </p>
             </motion.div>
           </motion.div>

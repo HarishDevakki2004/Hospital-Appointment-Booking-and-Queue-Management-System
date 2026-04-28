@@ -64,12 +64,12 @@ const Footer = () => {
         <div className="absolute bottom-0 left-1/2 w-64 h-64 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-10 animate-blob"></div>
       </div>
 
-      <div className="relative z-10 px-6 py-16 md:px-16 lg:px-24 xl:px-32 max-w-7xl mx-auto">
+      <div className="relative z-10 px-4 py-8 md:px-8 lg:px-16 xl:px-24 max-w-7xl mx-auto">
         <motion.div
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
           variants={containerVariants}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-12"
         >
           {/* Logo and description */}
           <motion.div variants={itemVariants} className="space-y-6">
@@ -77,7 +77,7 @@ const Footer = () => {
               whileHover={{ scale: 1.05 }}
               className="w-40"
             >
-              <img src={assets.logo} alt="Doc+ Logo" className="w-full bg-slate-100" />
+              <img src={assets.logo} alt="MediQ Logo" className="w-full bg-slate-100" />
             </motion.div>
             <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
               {contactInfo.company.description}
@@ -193,7 +193,7 @@ const Footer = () => {
           transition={{ delay: 0.8 }}
           className="flex flex-col md:flex-row justify-between items-center text-center text-gray-500 dark:text-gray-400 text-sm"
         >
-          <p>© {new Date().getFullYear()} Doc+. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} MediQ. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="#" className="hover:text-primary transition">Terms of Service</a>
             <a href="#" className="hover:text-primary transition">Privacy Policy</a>

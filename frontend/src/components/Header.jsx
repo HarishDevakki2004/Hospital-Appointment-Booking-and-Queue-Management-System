@@ -70,13 +70,13 @@ const Header = () => {
         <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-blue-400 rounded-full opacity-5 blur-3xl"></div>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-20 md:py-28">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
+      <div className="relative z-10 w-full px-4 sm:px-6 md:px-8 py-12 md:py-20 lg:py-28">
+        <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center max-w-7xl mx-auto">
           {/* Content */}
-          <motion.div variants={container} className="space-y-8">
+          <motion.div variants={container} className="space-y-6 md:space-y-8">
             <motion.h1 
               variants={item}
-              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight"
             >
               Find & Connect With{' '}
               <span className="relative inline-block">
@@ -105,11 +105,11 @@ const Header = () => {
               </p>
             </motion.div>
 
-            <motion.p variants={item} className="text-lg text-gray-300 max-w-lg">
+            <motion.p variants={item} className="text-base sm:text-lg text-gray-300 max-w-lg">
               Our platform connects you with top-rated medical professionals for seamless appointment booking and quality care.
             </motion.p>
 
-            <motion.div variants={item} className="flex flex-wrap gap-4">
+            <motion.div variants={item} className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
               <motion.a
                 href="/doctors"
                 whileHover={{ y: -2 }}

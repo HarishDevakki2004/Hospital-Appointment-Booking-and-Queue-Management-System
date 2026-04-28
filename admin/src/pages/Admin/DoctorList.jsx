@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AdminContext } from "../../context/AdminContext";
 import {
@@ -7,15 +8,20 @@ import {
   FiXCircle,
   FiLoader,
   FiSearch,
+  FiEdit2,
+  FiTrash2,
 } from "react-icons/fi";
+import { toast } from "react-toastify";
 
 const DoctorList = () => {
-  const { doctors, changeAvailability, aToken, getAllDoctors } =
+  const { doctors, changeAvailability, aToken, getAllDoctors, deleteDoctor } =
     useContext(AdminContext);
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSpeciality, setFilterSpeciality] = useState("all");
   const [togglingId, setTogglingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     if (aToken) {
@@ -30,6 +36,21 @@ const DoctorList = () => {
       await changeAvailability(id);
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  const handleEditDoctor = (doctor) => {
+    navigate('/edit-doctor', { state: { doctor } });
+  };
+
+  const handleDeleteDoctor = async (doctorId, doctorName) => {
+    if (window.confirm(`Are you sure you want to delete Dr. ${doctorName}? This action cannot be undone.`)) {
+      setDeletingId(doctorId);
+      try {
+        await deleteDoctor(doctorId);
+      } finally {
+        setDeletingId(null);
+      }
     }
   };
 
@@ -190,7 +211,7 @@ const DoctorList = () => {
                   <p className="text-primary font-medium">₹{doctor.fees}</p>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-3">
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
@@ -210,6 +231,34 @@ const DoctorList = () => {
                       )}
                     </span>
                   </label>
+                  
+                  <div className="flex gap-2">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleEditDoctor(doctor)}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <FiEdit2 className="text-sm" />
+                      Edit
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleDeleteDoctor(doctor._id, doctor.name)}
+                      disabled={deletingId === doctor._id}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {deletingId === doctor._id ? (
+                        <FiLoader className="animate-spin text-sm" />
+                      ) : (
+                        <>
+                          <FiTrash2 className="text-sm" />
+                          Delete
+                        </>
+                      )}
+                    </motion.button>
+                  </div>
                 </div>
               </div>
             </motion.div>

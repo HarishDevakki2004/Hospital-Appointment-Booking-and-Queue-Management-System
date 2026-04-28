@@ -31,6 +31,7 @@ const DoctorProfile = () => {
         fees: profileData.fees,
         about: profileData.about,
         available: profileData.available,
+        phone: profileData.phone,
       };
 
       const { data } = await axios.post(
@@ -305,6 +306,34 @@ const DoctorProfile = () => {
                       : "Not available"}
                   </span>
                 </motion.div>
+              </div>
+
+              {/* Phone */}
+              <div className="bg-gray-50 p-5 rounded-xl">
+                <div className="flex items-center gap-3 mb-3">
+                  <span style={{ fontSize: 18 }}>📞</span>
+                  <h3 className="font-medium text-gray-700">Phone Number</h3>
+                </div>
+                {isEdit ? (
+                  <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
+                    <input
+                      type="tel"
+                      onChange={(e) =>
+                        setProfileData((prev) => ({
+                          ...prev,
+                          phone: e.target.value,
+                        }))
+                      }
+                      value={profileData.phone || ''}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="Enter phone number"
+                    />
+                  </motion.div>
+                ) : (
+                  <p className="text-lg font-semibold text-gray-800">
+                    {profileData.phone || 'Not provided'}
+                  </p>
+                )}
               </div>
 
               {/* Address */}

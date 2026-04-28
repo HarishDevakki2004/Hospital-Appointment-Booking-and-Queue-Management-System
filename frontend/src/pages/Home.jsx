@@ -7,7 +7,7 @@ import Reviews from '../components/Reviews'
 
 const Home = () => {
   return (
-    <div>
+    <div className="pb-4 md:pb-0">
       <Header />
       <SpecialityMenu />
       <TopDoctors />

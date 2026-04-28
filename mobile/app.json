@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "MediQ Mobile",
+    "slug": "mediq-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#3b82f6"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mediq.mobile",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app needs access to your location to show directions to the doctor's clinic.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location to show directions to the doctor's clinic."
+      }
+    },
+    "android": {
+      "package": "com.mediq.mobile",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#3b82f6"
+      },
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5b4ea8b5-2a87-4510-b8ec-05d6998c2476"
+      }
+    }
+  }
+}

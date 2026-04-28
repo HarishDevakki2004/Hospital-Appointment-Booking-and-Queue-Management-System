@@ -109,6 +109,27 @@ const AdminContextProvider = (props) => {
 
     }
 
+    // Function to delete doctor using API
+    const deleteDoctor = async (docId) => {
+        try {
+            console.log('Deleting doctor:', docId);
+            console.log('Backend URL:', backendUrl);
+            console.log('Token:', aToken ? 'Present' : 'Missing');
+            const { data } = await axios.post(backendUrl + '/api/admin/delete-doctor', { docId }, { headers: { aToken } })
+            if (data.success) {
+                toast.success(data.message)
+                getAllDoctors()
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            console.error('Delete doctor error:', error);
+            console.error('Error response:', error.response);
+            const errorMessage = error.response?.data?.message || error.response?.statusText || error.message || 'Failed to delete doctor';
+            toast.error(`Delete failed: ${errorMessage} (Status: ${error.response?.status || 'Unknown'})`)
+        }
+    }
+
     const value = {
         aToken, setAToken,
         backendUrl, doctors,
@@ -116,6 +137,7 @@ const AdminContextProvider = (props) => {
         getAllAppointments, appointments,
         setAppointments, cancelAppointment,
         dashData, getDashData,
+        deleteDoctor,
     }
 
     return (

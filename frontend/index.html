@@ -3,12 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/Doc.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Doc+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#3b82f6" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MediQ" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>MediQ</title>
+    <style>
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        overscroll-behavior: none;
+        -webkit-overflow-scrolling: touch;
+      }
+      @media (max-width: 768px) {
+        body {
+          overflow-x: hidden;
+        }
+      }
+    </style>
   </head>
   <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
     <div id="root"></div>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFDB-WmwOy2TJwkqd6-A2ZHBeKPbE8-FE&libraries=places"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

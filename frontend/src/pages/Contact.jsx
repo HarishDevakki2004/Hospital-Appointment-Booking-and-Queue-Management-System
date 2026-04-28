@@ -37,7 +37,7 @@ const Contact = () => {
       ref={ref}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-[#0a0a0a] dark:to-[#121212]"
+      className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-[#0a0a0a] dark:to-[#121212] pb-20 md:pb-0"
     >
       {/* Decorative elements */}
       <div className="absolute inset-0 opacity-10 dark:opacity-5">

@@ -14,6 +14,26 @@ const doctorSchema = new mongoose.Schema({
     address: { type: Object, required: true },
     date: { type: Number, required: true },
     slots_booked: { type: Object, default: {} },
+    // Queue Management Fields (Legacy - kept for backward compatibility)
+    averageDiagnosisTime: { type: Number, default: 10 }, // Average time per patient in minutes
+    currentToken: { type: Number, default: 0 }, // Current token being treated
+    queueStatus: { 
+        type: Object, 
+        default: {} // Format: { "2024-01-15": { currentToken: 5, totalTokens: 20 } }
+    },
+    // New: Per-slot queue status (more granular)
+    slotQueueStatus: {
+        type: Object,
+        default: {} // Format: { "slotId": { currentToken: 2, totalTokens: 10, averageTime: 12.5 } }
+    },
+    // Location Fields
+    location: {
+        latitude: { type: Number, default: null },
+        longitude: { type: Number, default: null },
+        address: { type: String, default: '' }
+    },
+    // Contact Information
+    phone: { type: String, default: '' }
 }, { minimize: false })
 
 const doctorModel = mongoose.models.doctor || mongoose.model("doctor", doctorSchema);

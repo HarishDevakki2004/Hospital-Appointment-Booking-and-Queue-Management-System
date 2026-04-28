@@ -12,7 +12,10 @@ import {
   FiCalendar,
   FiDollarSign,
   FiCheckCircle,
+  FiNavigation,
+  FiCreditCard,
 } from "react-icons/fi";
+import { getTravelTime, getUserLocation } from "../utils/getTravelTime";
 
 const Appointment = () => {
   const { docId } = useParams();
@@ -33,14 +36,101 @@ const Appointment = () => {
   const [docSlots, setDocSlots] = useState([]);
   const [slotIndex, setSlotIndex] = useState(0);
   const [slotTime, setSlotTime] = useState("");
+  const [travelTime, setTravelTime] = useState(null); // Auto-calculated
+  const [travelDistance, setTravelDistance] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCalculatingTravel, setIsCalculatingTravel] = useState(false);
   const [bookingStatus, setBookingStatus] = useState(null);
+  const [bookedToken, setBookedToken] = useState(null);
 
   const navigate = useNavigate();
+
+  const initPay = (order) => {
+    const razorpayKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
+    
+    if (!razorpayKeyId) {
+      toast.error("Razorpay is not configured. Please contact support.");
+      return;
+    }
+
+    const options = {
+      key: razorpayKeyId,
+      amount: order.amount,
+      currency: order.currency,
+      name: "MediQ Appointment",
+      description: "Appointment Payment",
+      order_id: order.id,
+      receipt: order.receipt,
+      handler: async (response) => {
+        try {
+          const { data } = await axios.post(
+            backendUrl + "/api/user/verifyRazorpay",
+            response,
+            { headers: { token } }
+          );
+          if (data.success) {
+            toast.success("Payment successful!");
+            getDoctorsData();
+            navigate("/my-appointments");
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error(error.message);
+        }
+      },
+      theme: { color: "#4f46e5" },
+    };
+    
+    try {
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (error) {
+      console.error("Razorpay initialization error:", error);
+      toast.error("Failed to initialize payment. Please try again.");
+    }
+  };
 
   const fetchDocInfo = async () => {
     const docInfo = doctors.find((doc) => doc._id === docId);
     setDocInfo(docInfo);
+    
+    // Auto-calculate travel time when doctor info is loaded
+    if (docInfo && docInfo.location && docInfo.location.latitude && docInfo.location.longitude) {
+      await calculateTravelTime();
+    }
+  };
+
+  // Auto-calculate travel time using Google Distance Matrix API
+  const calculateTravelTime = async () => {
+    if (!docInfo || !docInfo.location || !docInfo.location.latitude || !docInfo.location.longitude) {
+      return;
+    }
+
+    setIsCalculatingTravel(true);
+    try {
+      // Get user location
+      const userLoc = await getUserLocation();
+      
+      // Doctor location
+      const doctorLoc = {
+        lat: docInfo.location.latitude,
+        lng: docInfo.location.longitude
+      };
+
+      // Calculate travel time
+      const result = await getTravelTime(userLoc, doctorLoc);
+      setTravelTime(result.duration);
+      setTravelDistance(result.distance);
+      
+      toast.success(`Travel time calculated: ${result.duration} minutes`);
+    } catch (error) {
+      console.error('Travel time calculation error:', error);
+      // Fallback to default if calculation fails
+      setTravelTime(15);
+      toast.warning('Could not calculate travel time. Using default: 15 minutes');
+    } finally {
+      setIsCalculatingTravel(false);
+    }
   };
 
   const getAvailableSlots = async () => {
@@ -117,6 +207,9 @@ const Appointment = () => {
       return;
     }
 
+    // Use calculated travel time or default to 15 minutes
+    const finalTravelTime = travelTime || 15;
+
     setBookingStatus("processing");
 
     const date = docSlots[slotIndex][0].datetime;
@@ -128,17 +221,17 @@ const Appointment = () => {
     try {
       const { data } = await axios.post(
         backendUrl + "/api/user/book-appointment",
-        { docId, slotDate, slotTime },
+        { docId, slotDate, slotTime, travelTime: finalTravelTime },
         { headers: { token } }
       );
 
       if (data.success) {
         setBookingStatus("success");
-        toast.success(data.message);
-        setTimeout(() => {
-          getDoctorsData();
-          navigate("/my-appointments");
-        }, 1500);
+        setBookedToken(data.appointment);
+        toast.success(
+          `Your token is #${data.appointment.tokenNumber}. Estimated time for your turn: ${data.appointment.estimatedTime || 'N/A'}.`
+        );
+        // Don't auto-navigate, let user see the success message and pay
       } else {
         setBookingStatus(null);
         toast.error(data.message);
@@ -334,6 +427,63 @@ const Appointment = () => {
           )}
         </div>
 
+        {/* Travel Time Display */}
+        {slotTime && (
+          <div className="mb-6">
+            {isCalculatingTravel ? (
+              <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-primary"></div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Calculating travel time...
+                </span>
+              </div>
+            ) : travelTime ? (
+              <div className="p-4 bg-gradient-to-r from-primary/10 to-cyan-50 dark:from-primary/20 dark:to-cyan-900/20 rounded-lg border border-primary/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                    <FiClock className="text-primary" />
+                    <span className="font-medium">Estimated Travel Time:</span>
+                  </div>
+                  <span className="text-xl font-bold text-primary">
+                    {travelTime} minutes
+                  </span>
+                </div>
+                {travelDistance && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Distance:</span>
+                    <span className="font-semibold text-gray-800 dark:text-white">
+                      {travelDistance} km
+                    </span>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Automatically calculated based on your location
+                </p>
+              </div>
+            ) : (
+              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-center gap-3">
+                  <FiNavigation className="text-yellow-600 dark:text-yellow-400" />
+                  <div className="flex-1">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium mb-1">
+                      Travel time not calculated
+                    </p>
+                    <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                      Using default: 15 minutes. Allow location access for accurate calculation.
+                    </p>
+                  </div>
+                  <button
+                    onClick={calculateTravelTime}
+                    className="px-3 py-1 text-xs bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-700"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Book Button */}
         <AnimatePresence>
           {slotTime && (
@@ -379,10 +529,23 @@ const Appointment = () => {
                     Processing...
                   </span>
                 ) : bookingStatus === "success" ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <FiCheckCircle className="text-lg" />
-                    Booked Successfully!
-                  </span>
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="flex items-center justify-center gap-2">
+                      <FiCheckCircle className="text-lg" />
+                      Booked Successfully!
+                    </span>
+                    {bookedToken && (
+                      <div className="mt-2 text-sm bg-white/20 rounded-lg px-4 py-2 text-center">
+                        <p className="font-semibold">Token #{bookedToken.tokenNumber}</p>
+                        <p className="text-xs opacity-90">
+                          Estimated time for your turn: <span className="font-bold text-lg text-primary">{bookedToken.estimatedTime || 'N/A'}</span>
+                        </p>
+                        <p className="text-xs opacity-75 mt-1">
+                          (Based on {docInfo?.averageDiagnosisTime || 10} min per patient)
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   `Book Appointment for ${slotTime.toLowerCase()}`
                 )}
@@ -390,6 +553,62 @@ const Appointment = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Pay Online Button - Show after successful booking */}
+        {bookingStatus === "success" && bookedToken && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 space-y-3"
+          >
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={async () => {
+                try {
+                  // Get appointment ID from bookedToken or fetch it
+                  const { data: appointmentsData } = await axios.get(
+                    backendUrl + "/api/user/appointments",
+                    { headers: { token } }
+                  );
+                  if (appointmentsData.appointments && appointmentsData.appointments.length > 0) {
+                    const latestAppointment = appointmentsData.appointments[0];
+                    const { data } = await axios.post(
+                      backendUrl + "/api/user/payment-razorpay",
+                      { appointmentId: latestAppointment._id },
+                      { headers: { token } }
+                    );
+                    if (data.success) {
+                      initPay(data.order);
+                    } else {
+                      toast.error(data.message);
+                    }
+                  } else {
+                    toast.error("Appointment not found. Please check My Appointments.");
+                  }
+                } catch (error) {
+                  console.error(error);
+                  toast.error(error.response?.data?.message || "Failed to initiate payment");
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-opacity-90"
+            >
+              <FiCreditCard />
+              Pay Online ({currencySymbol}{docInfo?.fees || 0})
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                getDoctorsData();
+                navigate("/my-appointments");
+              }}
+              className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600"
+            >
+              View My Appointments
+            </motion.button>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Related Doctors */}

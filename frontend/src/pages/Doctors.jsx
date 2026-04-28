@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { AppContext } from "../context/AppContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   FiFilter,
   FiStar,
@@ -19,6 +19,7 @@ const Doctors = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const doctorsPerPage = 6;
   const navigate = useNavigate();
+  const location = useLocation();
   const { doctors } = useContext(AppContext);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
@@ -55,6 +56,18 @@ const Doctors = () => {
     setFilterDoc(filtered);
     setCurrentPage(1); // Reset
   };
+
+  // Handle speciality filter from navigation state (from MedicalAssistant)
+  useEffect(() => {
+    if (location.state?.filterSpeciality) {
+      const speciality = location.state.filterSpeciality;
+      if (!selectedSpecialities.includes(speciality)) {
+        setSelectedSpecialities([speciality]);
+      }
+      // Clear the state to avoid re-applying on re-render
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     applyFilter();
@@ -97,9 +110,9 @@ const Doctors = () => {
       ref={ref}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen w-full bg-gradient-to-br from-[#f8fafc] to-[#f0f4f8] dark:from-[#0f172a] dark:to-[#1e293b] py-12 px-4 sm:px-6 lg:px-8"
+      className="min-h-screen w-full bg-gradient-to-br from-[#f8fafc] to-[#f0f4f8] dark:from-[#0f172a] dark:to-[#1e293b] py-6 md:py-12 px-3 sm:px-4 md:px-6 lg:px-8 pb-20 md:pb-12"
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ y: -30, opacity: 0 }}
@@ -107,10 +120,10 @@ const Doctors = () => {
           transition={{ duration: 0.6 }}
           className="mb-12 text-center"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4">
             Find Your Specialist
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-2">
             Connect with top-rated doctors across various specialties
           </p>
         </motion.div>

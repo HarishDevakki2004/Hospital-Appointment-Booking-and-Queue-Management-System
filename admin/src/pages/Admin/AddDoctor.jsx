@@ -29,6 +29,8 @@ const AddDoctor = () => {
   const [degree, setDegree] = useState("MBBS");
   const [address1, setAddress1] = useState("");
   const [address2, setAddress2] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -79,6 +81,8 @@ const AddDoctor = () => {
         "address",
         JSON.stringify({ line1: address1, line2: address2 })
       );
+      formData.append("latitude", latitude);
+      formData.append("longitude", longitude);
 
       const { data } = await axios.post(
         backendUrl + "/api/admin/add-doctor",
@@ -95,6 +99,8 @@ const AddDoctor = () => {
         setEmail("");
         setAddress1("");
         setAddress2("");
+        setLatitude("");
+        setLongitude("");
         setDegree("MBBS");
         setAbout("");
         setFees("");
@@ -355,8 +361,38 @@ const AddDoctor = () => {
                 onChange={(e) => setAddress2(e.target.value)}
                 type="text"
                 placeholder="Address line 2"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all mb-2"
               />
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <input
+                  value={latitude}
+                  onChange={(e) => setLatitude(e.target.value)}
+                  type="number"
+                  step="any"
+                  placeholder="Latitude (e.g., 28.6139)"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
+                />
+                <input
+                  value={longitude}
+                  onChange={(e) => setLongitude(e.target.value)}
+                  type="number"
+                  step="any"
+                  placeholder="Longitude (e.g., 77.2090)"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Get coordinates from{" "}
+                <a
+                  href="https://www.google.com/maps"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Google Maps
+                </a>
+                {" "}(right-click on location → Coordinates)
+              </p>
             </motion.div>
           </div>
         </div>

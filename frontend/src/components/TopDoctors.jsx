@@ -7,29 +7,45 @@ const TopDoctors = () => {
   const navigate = useNavigate();
   const { doctors } = useContext(AppContext);
   const controls = useAnimation();
+  const [isMounted, setIsMounted] = React.useState(false);
 
   // Infinite scroll animation
-  const animateScroll = async () => {
-    await controls.start({
-      x: "-100%",
-      transition: { duration: 30, ease: "linear" }
-    });
-    // Use start instead of set to avoid mounting issues
-    controls.start({ x: "0%" });
-    animateScroll();
-  };
+  const animateScroll = React.useCallback(async () => {
+    if (!isMounted) return;
+    
+    try {
+      await controls.start({
+        x: "-100%",
+        transition: { duration: 30, ease: "linear" }
+      });
+      // Reset and loop
+      await controls.start({ x: "0%", transition: { duration: 0 } });
+      if (isMounted) {
+        animateScroll();
+      }
+    } catch (error) {
+      // Component might have unmounted, ignore error
+      console.debug('Animation stopped:', error);
+    }
+  }, [controls, isMounted]);
 
   React.useEffect(() => {
-    // Add a small delay to ensure component is mounted
+    // Mark component as mounted
+    setIsMounted(true);
+    
+    // Start animation after component is fully mounted
     const timer = setTimeout(() => {
-      animateScroll();
-    }, 100);
+      if (isMounted && doctors.length > 0) {
+        animateScroll();
+      }
+    }, 200);
     
     return () => {
+      setIsMounted(false);
       clearTimeout(timer);
       controls.stop();
     };
-  }, [controls]);
+  }, [controls, doctors.length, isMounted, animateScroll]);
 
   return (
     <section className="relative py-20 px-4 sm:px-6 bg-gradient-to-b from-gray-50 to-white overflow-hidden">
@@ -119,7 +135,13 @@ const TopDoctors = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span>{doctor.location || "Online Consultation"}</span>
+                    <span>
+                      {doctor.location 
+                        ? (typeof doctor.location === 'string' 
+                            ? doctor.location 
+                            : doctor.location.address || "Location available")
+                        : "Online Consultation"}
+                    </span>
                   </div>
                 </div>
               </motion.div>

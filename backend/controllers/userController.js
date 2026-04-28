@@ -29,7 +29,16 @@ const registerUser = async (req, res) => {
     if (password.length < 8) {
       return res.json({
         success: false,
-        message: "Please enter a strong password",
+        message: "Please enter a strong password (minimum 8 characters)",
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await userModel.findOne({ email });
+    if (existingUser) {
+      return res.json({
+        success: false,
+        message: "Email already registered. Please use a different email or login.",
       });
     }
 
@@ -45,12 +54,34 @@ const registerUser = async (req, res) => {
 
     const newUser = new userModel(userData);
     const user = await newUser.save();
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-
-    res.json({ success: true, token });
+    
+    console.log(`✅ New user registered: ${user.name} (${user.email})`);
+    
+    // Note: We're not returning token anymore since registration redirects to login
+    res.json({ 
+      success: true, 
+      message: "Account created successfully! Please login to continue.",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error("Registration error:", error);
+    
+    // Handle duplicate key error (MongoDB unique constraint)
+    if (error.code === 11000 || error.message.includes("duplicate")) {
+      return res.json({
+        success: false,
+        message: "Email already registered. Please use a different email or login.",
+      });
+    }
+    
+    res.json({ 
+      success: false, 
+      message: error.message || "Registration failed. Please try again." 
+    });
   }
 };
 
@@ -94,42 +125,96 @@ const getProfile = async (req, res) => {
 // API to update user profile
 const updateProfile = async (req, res) => {
   try {
-    const { userId, name, phone, address, dob, gender } = req.body;
+    const { userId, name, phone, address, dob, gender, email } = req.body;
     const imageFile = req.file;
 
-    if (!name || !phone || !dob || !gender) {
-      return res.json({ success: false, message: "Data Missing" });
+    // Validation
+    if (!name || name.trim() === '') {
+      return res.json({ success: false, message: "Name is required" });
     }
 
-    await userModel.findByIdAndUpdate(userId, {
-      name,
-      phone,
-      address: JSON.parse(address),
-      dob,
-      gender,
-    });
+    if (!phone || phone.trim() === '') {
+      return res.json({ success: false, message: "Phone is required" });
+    }
 
+    // Validate phone format (basic)
+    const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+    if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
+      return res.json({ success: false, message: "Please enter a valid phone number" });
+    }
+
+    // Validate email if provided
+    if (email && !validator.isEmail(email)) {
+      return res.json({ success: false, message: "Please enter a valid email" });
+    }
+
+    // Validate DOB if provided
+    if (dob) {
+      const dobDate = new Date(dob);
+      const today = new Date();
+      if (dobDate > today) {
+        return res.json({ success: false, message: "Date of birth cannot be in the future" });
+      }
+    }
+
+    // Prepare update data
+    const updateData = {
+      name: name.trim(),
+      phone: phone.trim(),
+    };
+
+    if (email) updateData.email = email.trim();
+    if (dob) updateData.dob = dob;
+    if (gender) updateData.gender = gender;
+
+    // Handle address (can be string JSON or object)
+    if (address) {
+      try {
+        updateData.address = typeof address === 'string' ? JSON.parse(address) : address;
+      } catch (e) {
+        // If parsing fails, treat as simple string
+        updateData.address = { line1: address, line2: '' };
+      }
+    }
+
+    // Update profile
+    await userModel.findByIdAndUpdate(userId, updateData);
+
+    // Handle image upload if provided
     if (imageFile) {
-      // upload image to cloudinary
-      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
-        resource_type: "image",
-      });
-      const imageURL = imageUpload.secure_url;
+      try {
+        // Upload image to cloudinary
+        const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+          resource_type: "image",
+          folder: "user-profiles",
+        });
+        const imageURL = imageUpload.secure_url;
 
-      await userModel.findByIdAndUpdate(userId, { image: imageURL });
+        await userModel.findByIdAndUpdate(userId, { image: imageURL });
+      } catch (uploadError) {
+        console.error('Image upload error:', uploadError);
+        // Continue even if image upload fails, but log it
+      }
     }
 
-    res.json({ success: true, message: "Profile Updated" });
+    // Fetch updated user data
+    const updatedUser = await userModel.findById(userId).select('-password');
+
+    res.json({ 
+      success: true, 
+      message: "Profile Updated",
+      userData: updatedUser
+    });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error('Update profile error:', error);
+    res.json({ success: false, message: error.message || "Failed to update profile" });
   }
 };
 
 // API to book appointment
 const bookAppointment = async (req, res) => {
   try {
-    const { userId, docId, slotDate, slotTime } = req.body;
+    const { userId, docId, slotDate, slotTime, travelTime } = req.body;
     const docData = await doctorModel.findById(docId).select("-password");
 
     if (!docData.available) {
@@ -154,6 +239,18 @@ const bookAppointment = async (req, res) => {
 
     delete docData.slots_booked;
 
+    // Get queue status for the day to assign token number
+    const queueStatus = docData.queueStatus[slotDate] || { currentToken: 0, totalTokens: 0 };
+    const nextTokenNumber = queueStatus.totalTokens + 1;
+
+    // Calculate estimated wait time
+    const avgTime = docData.averageDiagnosisTime || 10;
+    const currentToken = queueStatus.currentToken || 0;
+    const estimatedWaitTime = (nextTokenNumber - currentToken) * avgTime;
+
+    // Use auto-calculated travelTime from frontend, fallback to 15 minutes if missing
+    const finalTravelTime = travelTime ? parseInt(travelTime) : 15;
+
     const appointmentData = {
       userId,
       docId,
@@ -163,15 +260,40 @@ const bookAppointment = async (req, res) => {
       slotTime,
       slotDate,
       date: Date.now(),
+      tokenNumber: nextTokenNumber,
+      travelTime: finalTravelTime,
+      estimatedWaitTime
     };
 
     const newAppointment = new appointmentModel(appointmentData);
     await newAppointment.save();
 
-    // save new slots data in docData
-    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+    // Update doctor's queue status
+    const updatedQueueStatus = {
+      ...docData.queueStatus,
+      [slotDate]: {
+        currentToken: queueStatus.currentToken || 0,
+        totalTokens: nextTokenNumber
+      }
+    };
 
-    res.json({ success: true, message: "Appointment Booked" });
+    await doctorModel.findByIdAndUpdate(docId, { 
+      slots_booked,
+      queueStatus: updatedQueueStatus
+    });
+
+    // Schedule notifications
+    const { scheduleNotifications } = await import('../services/notificationService.js');
+    await scheduleNotifications(newAppointment._id.toString());
+
+    res.json({ 
+      success: true, 
+      message: "Appointment Booked",
+      appointment: {
+        tokenNumber: nextTokenNumber,
+        estimatedWaitTime
+      }
+    });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -187,6 +309,79 @@ const listAppointment = async (req, res) => {
     res.json({ success: true, appointments });
   } catch (error) {
     console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// API to get user appointment history (past appointments with pagination)
+const getAppointmentHistory = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const { page = 1, pageSize = 20, filter = 'past' } = req.query;
+    
+    const pageNum = parseInt(page);
+    const limit = parseInt(pageSize);
+    const skip = (pageNum - 1) * limit;
+
+    // Build query based on filter
+    const now = new Date();
+    const query = { userId };
+
+    if (filter === 'past') {
+      query.$or = [
+        { slotDate: { $lt: now.toISOString().split('T')[0] } },
+        { date: { $lt: now.getTime() } },
+        { status: 'COMPLETED' }
+      ];
+      query.status = { $ne: 'CANCELLED' };
+    } else if (filter === 'cancelled') {
+      query.status = 'CANCELLED';
+      query.cancelled = true;
+    }
+    // 'all' shows everything
+
+    const appointments = await appointmentModel
+      .find(query)
+      .sort({ date: -1, slotDate: -1 }) // Most recent first
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await appointmentModel.countDocuments(query);
+
+    // Format appointments for response
+    const formattedAppointments = appointments.map(apt => ({
+      appointmentId: apt._id.toString(),
+      doctorName: apt.docData?.name || 'Unknown Doctor',
+      specialization: apt.docData?.speciality || 'General Physician',
+      tokenNumber: apt.slotTokenIndex ? `#${apt.slotTokenIndex}` : apt.tokenNumber ? `#${apt.tokenNumber}` : 'N/A',
+      time: apt.estimatedStart ? new Date(apt.estimatedStart).toISOString() : apt.date ? new Date(apt.date).toISOString() : null,
+      status: apt.status || (apt.cancelled ? 'cancelled' : apt.isCompleted ? 'completed' : 'booked'),
+      notes: apt.notes || null,
+      prescriptionUrl: apt.prescriptionUrl || null,
+      invoiceUrl: apt.invoiceUrl || null,
+      hospital: apt.docData?.address ? {
+        name: apt.docData?.address?.hospitalName || 'Hospital',
+        phone: apt.docData?.phone || '',
+        address: typeof apt.docData.address === 'object' 
+          ? `${apt.docData.address.line1 || ''}, ${apt.docData.address.line2 || ''}, ${apt.docData.address.city || ''}, ${apt.docData.address.state || ''}`.trim()
+          : apt.docData.address || ''
+      } : null,
+      slotDate: apt.slotDate,
+      slotTime: apt.slotTime,
+      amount: apt.amount,
+      payment: apt.payment
+    }));
+
+    res.json({
+      success: true,
+      items: formattedAppointments,
+      page: pageNum,
+      pageSize: limit,
+      total
+    });
+  } catch (error) {
+    console.error('Error getting appointment history:', error);
     res.json({ success: false, message: error.message });
   }
 };
@@ -226,9 +421,85 @@ const cancelAppointment = async (req, res) => {
   }
 };
 
+// API to get queue status for patient
+const getPatientQueueStatus = async (req, res) => {
+  try {
+    const { appointmentId } = req.body;
+    const appointment = await appointmentModel.findById(appointmentId);
+
+    if (!appointment) {
+      return res.json({ success: false, message: "Appointment not found" });
+    }
+
+    const doctor = await doctorModel.findById(appointment.docId);
+    if (!doctor) {
+      return res.json({ success: false, message: "Doctor not found" });
+    }
+
+    const queueStatus = doctor.queueStatus[appointment.slotDate] || { currentToken: 0, totalTokens: 0 };
+    const currentToken = queueStatus.currentToken || 0;
+    const patientToken = appointment.tokenNumber;
+    const avgTime = doctor.averageDiagnosisTime || 10;
+
+    // Calculate updated wait time
+    const estimatedWaitTime = Math.max(0, (patientToken - currentToken) * avgTime);
+
+    // Update appointment with new wait time
+    await appointmentModel.findByIdAndUpdate(appointmentId, {
+      estimatedWaitTime
+    });
+
+    res.json({
+      success: true,
+      queueStatus: {
+        currentToken,
+        patientToken,
+        estimatedWaitTime,
+        averageDiagnosisTime: avgTime,
+        positionInQueue: Math.max(0, patientToken - currentToken)
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// API to update travel time for an appointment
+const updateTravelTime = async (req, res) => {
+  try {
+    const { appointmentId, travelTime } = req.body;
+    const appointment = await appointmentModel.findById(appointmentId);
+
+    if (!appointment) {
+      return res.json({ success: false, message: "Appointment not found" });
+    }
+
+    await appointmentModel.findByIdAndUpdate(appointmentId, {
+      travelTime: parseInt(travelTime)
+    });
+
+    // Reschedule notifications with new travel time
+    const { scheduleNotifications } = await import('../services/notificationService.js');
+    await scheduleNotifications(appointmentId);
+
+    res.json({ success: true, message: "Travel time updated" });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
 // API to make payment of appointment using razorpay
 const paymentRazorpay = async (req, res) => {
   try {
+    if (!razorpayInstance) {
+      return res.json({
+        success: false,
+        message: "Razorpay is not configured. Please check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in environment variables.",
+      });
+    }
+
     const { appointmentId } = req.body;
     const appointmentData = await appointmentModel.findById(appointmentId);
 
@@ -242,7 +513,7 @@ const paymentRazorpay = async (req, res) => {
     // creating options for razorpay payment
     const options = {
       amount: appointmentData.amount * 100,
-      currency: process.env.CURRENCY,
+      currency: process.env.CURRENCY || "INR",
       receipt: appointmentId,
     };
 
@@ -259,6 +530,13 @@ const paymentRazorpay = async (req, res) => {
 // API to verify payment of razorpay
 const verifyRazorpay = async (req, res) => {
   try {
+    if (!razorpayInstance) {
+      return res.json({
+        success: false,
+        message: "Razorpay is not configured. Please check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in environment variables.",
+      });
+    }
+
     const { razorpay_order_id } = req.body;
     const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id);
 
@@ -277,10 +555,21 @@ const verifyRazorpay = async (req, res) => {
 };
 
 // Gateway Initialize
-// const razorpayInstance = new razorpay({
-//   key_id: process.env.RAZORPAY_KEY_ID,
-//   key_secret: process.env.RAZORPAY_KEY_SECRET,
-// });
+let razorpayInstance = null;
+
+try {
+  if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+    razorpayInstance = new razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+    console.log('✅ Razorpay initialized successfully');
+  } else {
+    console.warn('⚠️ Razorpay keys not found in environment variables');
+  }
+} catch (error) {
+  console.error('❌ Failed to initialize Razorpay:', error.message);
+}
 
 export {
   registerUser,
@@ -289,7 +578,10 @@ export {
   updateProfile,
   bookAppointment,
   listAppointment,
+  getAppointmentHistory,
   cancelAppointment,
+  getPatientQueueStatus,
+  updateTravelTime,
   paymentRazorpay,
   verifyRazorpay,
 };
